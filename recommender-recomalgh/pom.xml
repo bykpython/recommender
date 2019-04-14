@@ -12,6 +12,7 @@
     <artifactId>recommender-recomalgh</artifactId>
     <modules>
         <module>recomalgh-dataloader</module>
+        <module>recomalgh-statistics</module>
     </modules>
     <packaging>pom</packaging>
 
