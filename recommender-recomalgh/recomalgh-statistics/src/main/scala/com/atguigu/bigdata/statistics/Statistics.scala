@@ -3,54 +3,14 @@ package com.atguigu.bigdata.statistics
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import com.atguigu.bigdata.common.DataModel
+import com.atguigu.bigdata.common.DataModel.{MongoConfig, Rating}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-/**
-  *
-  * @param productId  商品id
-  * @param name       商品名称
-  * @param categories 商品类别
-  * @param imageUrl   商品图片url
-  * @param tags       商品标签
-  */
-case class Product(productId:Int, name:String, categories:String, imageUrl:String, tags:String)
-
-/**
-  *
-  * @param userId     用户id
-  * @param productId  商品id
-  * @param score      商品评分
-  * @param timestamp  商品评分时间
-  */
-case class Rating(userId:Int, productId:Int, score:Double, timestamp:Int)
-
-/**
-  *
-  * @param uri        数据库uri
-  * @param db         数据库名
-  */
-case class MongoConfig(uri:String, db:String)
-
-/**
-  *
-  * @param rid        推荐的商品id
-  * @param r          推荐指数
-  */
-case class Recommendation(rid:Int, r:Double)
 
 object Statistics {
 
-  val MONGODB_RATING_COLLECTION = "Rating"
-  val MONGODB_PRODUCT_COLLECTION = "Products"
-
-  // 统计的表的名称
-  val RATE_MORE_PRODUCTS = "RateMoreProducts"
-  val RATE_MORE_RECENTLY_PRODUCTS = "RateMoreRecentlyProducts"
-  val AVERAGE_PRODUCTS = "AverageProducts"
-  val TOP_PRODUCTS = "GenresTopProducts"
-
-  // 入口方法
   def main(args: Array[String]): Unit = {
 
     val config = Map(
@@ -74,21 +34,21 @@ object Statistics {
     // 先得到连接mongo的配置
     val mgConf = MongoConfig(config.get("mongo.uri").get, config.get("mongo.db").get)
 
-    // 从mongodb中获取评分记录数据
+    // 从mongodb中获取评分记录数据Rating(userId, productId, score, timestamp)
     val ratingDF: DataFrame = spark
       .read
       .option("uri", mgConf.uri)
-      .option("collection", MONGODB_RATING_COLLECTION)
+      .option("collection", DataModel.MONGODB_RATING_COLLECTION)
       .format("com.mongodb.spark.sql")
       .load()
       .as[Rating]
       .toDF()
 
-    // 从mongodb中获取商品信息
+    // 从mongodb中获取商品信息Products(productId, name, category, imageUrl, tag)
     val productDF: DataFrame = spark
       .read
       .option("uri", mgConf.uri)
-      .option("collection", MONGODB_PRODUCT_COLLECTION)
+      .option("collection", DataModel.MONGODB_PRODUCT_COLLECTION)
       .format("com.mongodb.spark.sql")
       .load()
       .as[Product]
@@ -99,13 +59,15 @@ object Statistics {
 
     // 从ratings查询数据形成结构--->(productId, count)：商品被评分的次数
     // 按照商品id进行分组
-    val rateMoreProductsDF: DataFrame = spark.sql("select productId, count(productId) as count from ratings group by productId")
+    val selectRateGroupbyProduct = "select productId, count(productId) as count from ratings group by productId"
+    val rateMoreProductsDF: DataFrame = spark.sql(selectRateGroupbyProduct)
 
     // 将分组后的商品评分数据存入mongodb
+    // RateMoreProducts(productId, count--被评分的次数)
     rateMoreProductsDF
       .write
       .option("uri", mgConf.uri)
-      .option("collection", RATE_MORE_PRODUCTS)
+      .option("collection", DataModel.RATE_MORE_PRODUCTS)
       .mode("overwrite")
       .format("com.mongodb.spark.sql")
       .save()
@@ -115,7 +77,8 @@ object Statistics {
     spark.udf.register("changeDate", (x:Int)=>spFormat.format(new Date(x*1000L)).toInt)
 
     // 使用自定义udf函数，从评分记录表中查数据
-    val ratingOfYearMonth: DataFrame = spark.sql("select productId, score, changeDate(timestamp) as yearmonth from ratings")
+    val selectRateYearMonth = "select productId, score, changeDate(timestamp) as yearmonth from ratings"
+    val ratingOfYearMonth: DataFrame = spark.sql(selectRateYearMonth)
 
     // 为查出来的数据创建临时视图ratingOfMonth
     ratingOfYearMonth.createOrReplaceTempView("ratingOfMonth")
@@ -124,22 +87,25 @@ object Statistics {
     val rateMoreRecentlyProducts: DataFrame = spark.sql("select productId, count(productId) as count, yearmonth from ratingOfMonth group by yearmonth, productId")
 
     // 将聚合后的数据存入mongodb
+    // 商品每个月别评分的次数 RateMoreRecentlyProducts(productId, count--商品被评分的次数, yearmonth)
     rateMoreRecentlyProducts
       .write
       .option("uri", mgConf.uri)
-      .option("collection", RATE_MORE_RECENTLY_PRODUCTS)
+      .option("collection", DataModel.RATE_MORE_RECENTLY_PRODUCTS)
       .mode("overwrite")
       .format("com.mongodb.spark.sql")
       .save()
 
     // 从评分记录表中，按照商品id分组，获取每一个商品的平均的评分
-    val averageProductDF: DataFrame = spark.sql("select productId, avg(score) as avg from ratings group by productId order by avg desc")
+    val avgScoreProduct = "select productId, avg(score) as avg from ratings group by productId order by avg desc"
+    val averageProductDF: DataFrame = spark.sql(avgScoreProduct)
 
     // 将每一个商品的平均评分存入到mongodb中
+    // AverageProducts(productId, avg)
     averageProductDF
       .write
       .option("uri", mgConf.uri)
-      .option("collection", AVERAGE_PRODUCTS)
+      .option("collection", DataModel.AVERAGE_PRODUCTS)
       .mode("overwrite")
       .format("com.mongodb.spark.sql")
       .save()

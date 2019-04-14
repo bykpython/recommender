@@ -12,6 +12,11 @@
     <artifactId>recomalgh-statistics</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>com.atguigu</groupId>
+            <artifactId>recomalgh-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- Spark的依赖引入 -->
         <dependency>
             <groupId>org.apache.spark</groupId>
