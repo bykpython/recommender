@@ -6,11 +6,11 @@ object DataModel {
     * 商品信息
     * @param productId  商品id
     * @param name       商品名称
-    * @param categorye  商品类别
-    * @param impageUrl  商品图片url
+    * @param categories  商品类别
+    * @param imageUrl  商品图片url
     * @param tags       商品标签
     */
-  case class Product(productId: Int, name: String, categorye: String, impageUrl: String, tags: String)
+  case class Product(productId: Int, name: String, categories: String, imageUrl: String, tags: String)
 
   /**
     * mongo数据库配置
@@ -46,7 +46,11 @@ object DataModel {
     * @param productId  商品id
     * @param recs       与当前商品id相似的推荐商品列表
     */
-  case class ProduceRecs(productId: Int, recs: Seq[Recommendation])
+  case class ProductRecs(productId: Int, recs: Seq[Recommendation])
+
+
+  case class UserRecs(userId: Int, recs: Seq[Recommendation])
+
 
   val MONGODB_RATING_COLLECTION = "Rating"
   val MONGODB_PRODUCT_COLLECTION = "Products"
@@ -65,5 +69,11 @@ object DataModel {
   /***********数据加载模块相关变量******************/
   val PRODUCTS_DATA_PATH = "D:\\tmpfile\\recommender\\recommender-recomalgh\\recomalgh-dataloader\\src\\main\\resources\\100products.csv"
   val RATING_DATA_PATH = "D:\\tmpfile\\recommender\\recommender-recomalgh\\recomalgh-dataloader\\src\\main\\resources\\9000_users_100_products_ratings.csv"
+
+  /***********离线推荐模块相关变量***************/
+  val USER_MAX_RECOMMENDATION = 20
+  val USER_RECS = "UserRecs"
+  val OFFLINE_PRODUCT_RECS = "OffLineProductRecs"
+
 
 }
