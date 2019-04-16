@@ -17,6 +17,7 @@
         <module>recomalgh-common</module>
         <module>exercise</module>
         <module>recomalgh-offlinerecom</module>
+        <module>reconalgh-contentrecom</module>
     </modules>
     <packaging>pom</packaging>
 

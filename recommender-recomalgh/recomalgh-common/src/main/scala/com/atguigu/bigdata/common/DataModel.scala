@@ -76,4 +76,8 @@ object DataModel {
   val OFFLINE_PRODUCT_RECS = "OffLineProductRecs"
 
 
+  /***********基于内容推荐相关模块*************/
+  val CONTENT_PRODUCT_RECS = "ContentBasedProductRecs"
+
+
 }

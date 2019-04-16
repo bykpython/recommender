@@ -74,16 +74,12 @@ object OffLineRecom {
     // 训练ALS模型
     val model: MatrixFactorizationModel = ALS.train(trainData, rank, iterations, lambda)
 
-    println("model:")
-    println(model.toString.take(10))
 
     // 计算用户推荐矩阵
     // 需要构造一个usersProducts RDD[(Int, Int)]
-    // (userId).cartesian(productId)
+    // (userId).cartesian(productId)===>(userId, productId)
     val userProducts: RDD[(Int, Int)] = userRDD.cartesian(productRDD)
 
-    println("userProducts:")
-    userProducts.toDF().show(10)
 
     val preRatings: RDD[Rating] = model.predict(userProducts)
 

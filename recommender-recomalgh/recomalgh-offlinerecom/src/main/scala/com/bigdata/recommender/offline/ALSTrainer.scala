@@ -57,15 +57,16 @@ object ALSTrainer {
     import spark.implicits._
 
     //加载评分数据
-    val ratingRDD = spark
+    val ratingRDD: RDD[Rating] = spark
       .read
-      .option("uri",mongoConfig.uri)
+      .option("uri", mongoConfig.uri)
       .option("collection", DataModel.MONGODB_RATING_COLLECTION)
       .format("com.mongodb.spark.sql")
       .load()
       .as[DataModel.Rating]
       .rdd
       .map(rating => Rating(rating.userId, rating.productId, rating.score)).cache()
+
 
     // 训练集的数据量是80%，测试机的数据量时20%
     val splits: Array[RDD[Rating]] = ratingRDD.randomSplit(Array(0.8, 0.2))
